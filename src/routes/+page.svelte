@@ -46,12 +46,12 @@
 
   // Settings
   export let fractalMode = 2;
-  export let fractalSpeed = 0.5;
-  export let colorIntensity = 0.2;
+  export let fractalSpeed = 1.5;
+  export let colorIntensity = 0.4;
   export let redIntensity = 2;
   export let greenIntensity = 0.6;
   export let blueIntensity = 0.1;
-  export let zoomIntensity = 1;
+  export let zoomIntensity = 2;
 
   // Shader uniforms
   let arg = Math.PI / 2;
@@ -188,6 +188,7 @@
 
       // Create an analyser
       analyser = audioContext.createAnalyser();
+      analyser.smoothingTimeConstant = 0;
       analyser.fftSize = 512; // Must be a power of 2
       const bufferLength = analyser.frequencyBinCount;
 
@@ -255,7 +256,7 @@
     }
 
     // Smoothing factor (0 to 1): 0 -> slower, 1 -> faster tracking
-    const smoothing = 0.9;
+    const smoothing = 0.05;
 
     // Interpolate new values for bass, midrange, and treble intensities
     bass = lerp(smoothing, 0, 1, bass, newBass);
@@ -279,7 +280,7 @@
       return [0.7885 * Math.cos(y), 0.7885 * Math.sin(y)];
     } else if (fractalMode === 2) {
       // Add volume (loop around), but only keep a fixed interval
-      arg += meanVol * fractalSpeed;
+      arg = lerp(0.1, 0, 1, arg, arg + meanVol * fractalSpeed);
       const y = (Math.sin(arg) * Math.PI) / 2 + Math.PI;
       return [0.7885 * Math.cos(y), 0.7885 * Math.sin(y)];
     } else if (fractalMode === 3) {
@@ -317,17 +318,17 @@
 
     // Resize canvas to match display dimensions for sharp rendering
     if (
-      canvas.width !== canvas.clientWidth ||
-      canvas.height !== canvas.clientHeight
+      canvas.width !== canvas.clientWidth * 2 ||
+      canvas.height !== canvas.clientHeight * 2
     ) {
-      canvas.width = canvas.clientWidth;
-      canvas.height = canvas.clientHeight;
+      canvas.width = canvas.clientWidth * 2;
+      canvas.height = canvas.clientHeight * 2;
       gl.viewport(0, 0, canvas.width, canvas.height);
     }
 
     // Update shader uniforms
     const uResolution = gl.getUniformLocation(shaderProgram, 'u_resolution');
-    gl.uniform2f(uResolution, width, height);
+    gl.uniform2f(uResolution, canvas.width, canvas.height);
 
     const uTime = gl.getUniformLocation(shaderProgram, 'u_time');
     gl.uniform1f(uTime, timestamp * 0.001);
@@ -439,7 +440,7 @@
       zoomIntensity = Math.max(0, zoomIntensity - 0.1);
     }
     if (event.key === 'r') {
-      zoomIntensity = Math.min(5, zoomIntensity + 0.1);
+      zoomIntensity = Math.min(10, zoomIntensity + 0.1);
     }
   }
 
@@ -467,9 +468,9 @@
           height = entry.contentRect.height;
 
           // Update canvas dimensions for pixel-perfect rendering
-          canvas.width = width;
-          canvas.height = height;
-          gl.viewport(0, 0, width, height);
+          canvas.width = width * 2;
+          canvas.height = height * 2;
+          gl.viewport(0, 0, canvas.width, canvas.height);
         }
       });
 
