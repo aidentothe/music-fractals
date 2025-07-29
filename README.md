@@ -1,6 +1,8 @@
 # Fractal Music Visualizer
 
-Fractals that react to audio input in real-time
+Fractals that react to audio input in real time
+
+<img width="2954" height="1978" alt="image" src="https://github.com/user-attachments/assets/11dcad28-a0c3-4c4b-9bb9-08ff19a276f6" />
 
 ## Features
 
