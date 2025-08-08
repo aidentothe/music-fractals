@@ -26,6 +26,7 @@
   let audioContext;
   let analyser;
   let audioSource;
+  let audioSourceType = 'none';
   let mouseX = 0;
   let mouseY = 0;
   let width = 0;
@@ -177,11 +178,36 @@
 
   async function initAudio() {
     try {
-      // Create audio context
+      // Try to get system audio first, then fall back to microphone
       audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-      // Get user audio permission for capturing system audio
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      let stream;
+      
+      // Try system audio via screen capture (includes system audio)
+      try {
+        stream = await navigator.mediaDevices.getDisplayMedia({
+          video: false,
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+            sampleRate: 48000
+          }
+        });
+        audioSourceType = 'system';
+        console.log('Using system audio');
+      } catch (err) {
+        // Fall back to microphone
+        console.log('System audio not available, using microphone');
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false
+          }
+        });
+        audioSourceType = 'microphone';
+      }
 
       // Create an audio source from the stream
       audioSource = audioContext.createMediaStreamSource(stream);
@@ -521,8 +547,12 @@
     <div>Bass: {bass.toFixed(3)}</div>
     <div>Midrange: {mid.toFixed(3)}</div>
     <div>Treble: {treble.toFixed(3)}</div>
-
-    {#if !isAudioInitialized}
+    
+    {#if isAudioInitialized}
+      <div class="mt-2.5 text-green-300">
+        Audio: {audioSourceType === 'system' ? '🔊 System' : '🎤 Microphone'}
+      </div>
+    {:else}
       <div class="mt-2.5 text-yellow-300 font-bold">
         Click anywhere to enable audio
       </div>
